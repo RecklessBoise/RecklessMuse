@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RecklessMusePreset name="Pinged Filter" category="Pluck" author="RecklessMuse">
+  <Params a_aeA="0.001" a_aeD="1.5" a_aeR="1" a_aeS="0" a_aeVel="0.3" a_f1Cutoff="20" a_f1Mode="1" a_f2Cutoff="900" a_f2Env="0.25" a_f2Kb="2" a_f2Res="0.96" a_fOrder="3" a_feA="0.001" a_feD="0.3" a_feR="0.3" a_feS="0" a_feVel="0.3" a_glide="0" a_mixMod="0" a_mixNoise="0.03" a_mixO1="0" a_mixO2="0" a_mixOverload="0.05" a_mixRing="0" a_o1Freq="0" a_o1Oct="2" a_o1Wave="0" a_o2Freq="0" a_o2Oct="2" a_o2Wave="0" a_polyMode="0" a_uniDetune="0.1" dlyChar="0.4" dlyDiff="0.6" dlyDivL="8" dlyDivR="10" dlyFb="0.4" dlyMix="0.25" dlyOn="1" dlySync="1"/>
+</RecklessMusePreset>

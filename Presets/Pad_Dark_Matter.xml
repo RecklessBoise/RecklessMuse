@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RecklessMusePreset name="Dark Matter" category="Pad" author="RecklessMuse">
+  <Params a_aeA="1.5" a_aeD="1" a_aeR="2.5" a_aeS="1" a_aeVel="0.3" a_f1Cutoff="20" a_f1Mode="1" a_f2Cutoff="300" a_f2Env="0.2" a_f2Kb="1" a_f2Res="0.55" a_fOrder="3" a_feA="1.5" a_feD="3" a_feR="2" a_feS="0.5" a_feVel="0.3" a_glide="0" a_l2Rate="0.05" a_l2Wave="6" a_mixMod="0" a_mixNoise="0.05" a_mixO1="0.85" a_mixO2="0.7" a_mixOverload="0.35" a_mixRing="0" a_mm1Amt="0.25" a_mm1Dst="11" a_mm1Src="2" a_mm1Via="0" a_o1Freq="0" a_o1Oct="1" a_o1Wave="0.333333" a_o2Freq="0.15" a_o2Oct="2" a_o2Wave="0.333333" a_polyMode="0" a_uniDetune="0.4" a_vcaLevel="0.75" a_vcaPan="0" a_vcaSpread="0.6" dlyChar="0.55" dlyDiff="0.75" dlyDivL="11" dlyDivR="12" dlyFb="0.45" dlyMix="0.3" dlyOn="1" dlySync="1"/>
+</RecklessMusePreset>

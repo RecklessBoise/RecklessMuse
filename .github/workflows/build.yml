@@ -1,0 +1,71 @@
+name: Build & validate
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure (universal binary)
+        run: >
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+
+      - name: Build
+        run: cmake --build build --config Release -j 4
+
+      - name: Unit tests + render of every factory preset
+        run: ./build/RecklessMuseTests_artefacts/Release/RecklessMuseTests
+
+      - name: Install plug-ins
+        run: ./scripts/install.sh build
+
+      - name: auval (Audio Unit validation)
+        run: |
+          killall -9 AudioComponentRegistrar || true
+          sleep 3
+          auval -v aumu RMus Rklb
+
+      - name: pluginval (VST3)
+        run: |
+          curl -sSL -o pluginval.zip https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_macOS.zip
+          unzip -q pluginval.zip
+          ./pluginval.app/Contents/MacOS/pluginval --strictness-level 5 --validate-in-process --skip-gui-tests \
+            --timeout-ms 600000 "$HOME/Library/Audio/Plug-Ins/VST3/RecklessMuse.vst3"
+
+      - name: Package
+        run: |
+          mkdir -p dist/RecklessMuse
+          ART=build/RecklessMuse_artefacts/Release
+          cp -R "$ART/VST3/RecklessMuse.vst3" dist/RecklessMuse/
+          cp -R "$ART/AU/RecklessMuse.component" dist/RecklessMuse/
+          cp -R "$ART/Standalone/RecklessMuse.app" dist/RecklessMuse/
+          cp scripts/install-release.sh dist/RecklessMuse/install.sh
+          cp README.md LICENSE dist/RecklessMuse/
+          cd dist && ditto -c -k --keepParent RecklessMuse RecklessMuse-macOS.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RecklessMuse-macOS
+          path: dist/RecklessMuse-macOS.zip
+
+      - name: GitHub release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/RecklessMuse-macOS.zip \
+            --title "RecklessMuse ${GITHUB_REF_NAME}" --notes-file docs/RELEASE_NOTES.md \
+          || gh release upload "${GITHUB_REF_NAME}" dist/RecklessMuse-macOS.zip --clobber

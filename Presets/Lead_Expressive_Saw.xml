@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RecklessMusePreset name="Expressive Saw" category="Lead" author="RecklessMuse">
+  <Params a_aeA="0.01" a_aeD="0.5" a_aeR="0.35" a_aeS="0.9" a_aeVel="0.3" a_bendRange="2" a_f1Cutoff="20" a_f1Mode="1" a_f2Cutoff="1400" a_f2Env="0.3" a_f2Kb="1" a_f2Res="0.25" a_fOrder="3" a_feA="0.01" a_feD="0.6" a_feR="0.3" a_feS="0.5" a_feVel="0.3" a_glide="0.06" a_mixMod="0" a_mixNoise="0" a_mixO1="0.8" a_mixO2="0.7" a_mixOverload="0.35" a_mixRing="0" a_mm1Amt="0.35" a_mm1Dst="11" a_mm1Src="8" a_mm1Via="0" a_mm2Amt="0.15" a_mm2Dst="13" a_mm2Src="6" a_mm2Via="0" a_notePrio="0" a_o1Freq="0" a_o1Oct="2" a_o1Wave="0.333333" a_o2Freq="0.05" a_o2Oct="2" a_o2Wave="0.333333" a_plAmt="0.3" a_plRate="5.5" a_plWave="1" a_plWheel="1" a_polyMode="1"/>
+</RecklessMusePreset>

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RecklessMusePreset name="Punch Square" category="Bass" author="RecklessMuse">
+  <Params a_aeA="0.001" a_aeD="0.5" a_aeR="0.12" a_aeS="0.9" a_aeVel="0.3" a_bendRange="2" a_f1Cutoff="20" a_f1Mode="1" a_f2Cutoff="397.65" a_f2Env="0.6" a_f2Kb="1" a_f2Res="0.3" a_fOrder="3" a_feA="0.001" a_feD="0.1978" a_feR="0.15" a_feS="0.1" a_feVel="0.3" a_glide="0" a_mixMod="0" a_mixNoise="0" a_mixO1="0.9" a_mixO2="0.621" a_mixOverload="0.3702" a_mixRing="0" a_notePrio="1" a_o1Freq="0" a_o1Oct="1" a_o1Wave="0.666667" a_o2Freq="0.0273" a_o2Oct="1" a_o2Wave="0.666667" a_polyMode="1"/>
+</RecklessMusePreset>

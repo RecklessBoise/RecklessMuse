@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RecklessMusePreset name="Combo Organ" category="Keys" author="RecklessMuse">
+  <Params a_aeA="0.004" a_aeD="0.5" a_aeR="0.05" a_aeS="1" a_aeVel="0" a_f1Cutoff="20" a_f1Mode="1" a_f2Cutoff="2500" a_f2Env="0" a_f2Kb="2" a_f2Res="0.15" a_fOrder="3" a_feA="0.002" a_feD="0.4" a_feR="0.3" a_feS="0.3" a_feVel="0.3" a_glide="0" a_mixMod="0" a_mixNoise="0" a_mixO1="0.7" a_mixO2="0.5" a_mixOverload="0.45" a_mixRing="0" a_o1Freq="0" a_o1Oct="2" a_o1Wave="0.666667" a_o2Freq="0" a_o2Oct="3" a_o2Wave="0.333333" a_plAmt="0.15" a_plRate="6.5" a_plWave="1" a_plWheel="0" a_polyMode="0" a_uniDetune="0.05"/>
+</RecklessMusePreset>

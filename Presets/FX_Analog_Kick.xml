@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RecklessMusePreset name="Analog Kick" category="FX" author="RecklessMuse">
+  <Params a_aeA="0.001" a_aeD="0.35" a_aeR="0.3" a_aeS="0" a_aeVel="0.5" a_f1Cutoff="20" a_f1Mode="1" a_f2Cutoff="300" a_f2Env="0.5" a_f2Kb="0" a_f2Res="0.2" a_fOrder="3" a_feA="0.001" a_feD="0.08" a_feR="0.08" a_feS="0" a_feVel="0.3" a_glide="0" a_mixMod="0" a_mixNoise="0" a_mixO1="1" a_mixO2="0" a_mixOverload="0.5" a_mixRing="0" a_mm1Amt="0.6" a_mm1Dst="1" a_mm1Src="4" a_mm1Via="0" a_o1Freq="0" a_o1Oct="1" a_o1Wave="0" a_o2Freq="0" a_o2Oct="1" a_o2Wave="0" a_polyMode="0" a_uniDetune="0"/>
+</RecklessMusePreset>
