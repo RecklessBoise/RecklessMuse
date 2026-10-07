@@ -57,6 +57,7 @@ public:
         double arpDivBeats = 0.25;
         float arpGate = 0.5f;
         bool seqPlay = false, seqRec = false, seqTranspose = true;
+        bool hold = false; // keyboard HOLD: latches the arpeggiator / sequencer like the Latch button
         int seqLength = 16;
         double seqDivBeats = 0.25;
         float seqGate = 0.5f;
@@ -94,6 +95,8 @@ private:
     void stopArpNote (int t);
     void stopSeqNote (int t);
     void releaseDirectNotes (int t);
+    void stopEverything (int t);
+    static bool latched (const Settings& s) noexcept { return s.arpLatch || s.hold; }
 
     SequenceData& sequence;
     ChordData& chords;
@@ -117,7 +120,7 @@ private:
 
     // Sequencer
     std::array<int, 16> seqHeld {};
-    int numSeqHeld = 0, seqIndex = -1;
+    int numSeqHeld = 0, seqIndex = -1, seqPhysical = 0;
     int seqPlaying = -1, seqGateLeft = 0;
     StepClock seqClock;
 
@@ -125,6 +128,6 @@ private:
     std::array<int, ChordData::kMaxNotes> learnNotes {};
     int numLearn = 0, learnHeld = 0;
 
-    bool wasArpOn = false, wasSeqPlay = false;
+    bool wasArpOn = false, wasSeqPlay = false, wasHostPlaying = false;
 };
 } // namespace rm

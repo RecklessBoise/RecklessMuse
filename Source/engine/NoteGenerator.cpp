@@ -69,9 +69,10 @@ void NoteGenerator::reset()
     numArpNotes = physicalHeld = 0;
     arpIndex = -1;
     arpPlaying = seqPlaying = -1;
-    numSeqHeld = 0;
+    numSeqHeld = seqPhysical = 0;
     seqIndex = -1;
     numLearn = learnHeld = 0;
+    wasHostPlaying = false;
     arpClock.restart();
     seqClock.restart();
 }
@@ -96,6 +97,21 @@ void NoteGenerator::releaseDirectNotes (int t)
         }
 }
 
+// Transport stop / All Notes Off: nothing generated may keep sounding.
+void NoteGenerator::stopEverything (int t)
+{
+    stopArpNote (t);
+    stopSeqNote (t);
+    releaseDirectNotes (t);
+    numArpNotes = physicalHeld = 0;
+    numSeqHeld = seqPhysical = 0;
+    arpIndex = seqIndex = -1;
+    generatedCount.fill (0);
+    sequence.playIndex = -1;
+    arpClock.restart();
+    seqClock.restart();
+}
+
 void NoteGenerator::stopArpNote (int t)
 {
     if (arpPlaying >= 0)
@@ -116,22 +132,39 @@ void NoteGenerator::routeNote (bool isOn, int note, float velocity, int t, const
 {
     if (s.seqPlay)
     {
-        // While the sequencer runs, the keyboard transposes it.
+        // The sequencer plays while a key is held (or latched); the key transposes it.
         if (isOn)
         {
+            if (latched (s) && seqPhysical == 0)
+                numSeqHeld = 0; // a fresh key replaces the latched one
+            ++seqPhysical;
+            if (numSeqHeld == 0)
+            {
+                seqClock.restart();
+                seqIndex = -1;
+            }
             if (numSeqHeld < (int) seqHeld.size())
                 seqHeld[(size_t) numSeqHeld++] = note;
         }
         else
         {
-            for (int i = 0; i < numSeqHeld; ++i)
-                if (seqHeld[(size_t) i] == note)
+            seqPhysical = std::max (0, seqPhysical - 1);
+            if (! latched (s))
+            {
+                for (int i = 0; i < numSeqHeld; ++i)
+                    if (seqHeld[(size_t) i] == note)
+                    {
+                        for (int j = i; j < numSeqHeld - 1; ++j)
+                            seqHeld[(size_t) j] = seqHeld[(size_t) j + 1];
+                        --numSeqHeld;
+                        break;
+                    }
+                if (numSeqHeld == 0)
                 {
-                    for (int j = i; j < numSeqHeld - 1; ++j)
-                        seqHeld[(size_t) j] = seqHeld[(size_t) j + 1];
-                    --numSeqHeld;
-                    break;
+                    stopSeqNote (t);
+                    sequence.playIndex = -1;
                 }
+            }
         }
         return;
     }
@@ -140,7 +173,7 @@ void NoteGenerator::routeNote (bool isOn, int note, float velocity, int t, const
     {
         if (isOn)
         {
-            if (s.arpLatch && physicalHeld == 0)
+            if (latched (s) && physicalHeld == 0)
                 numArpNotes = 0; // a fresh chord replaces the latched one
             ++physicalHeld;
             bool present = false;
@@ -159,7 +192,7 @@ void NoteGenerator::routeNote (bool isOn, int note, float velocity, int t, const
         else
         {
             physicalHeld = std::max (0, physicalHeld - 1);
-            if (! s.arpLatch)
+            if (! latched (s))
             {
                 for (int i = 0; i < numArpNotes; ++i)
                     if (arpNotes[(size_t) i].note == note)
@@ -191,6 +224,12 @@ void NoteGenerator::routeNote (bool isOn, int note, float velocity, int t, const
 
 void NoteGenerator::handleInput (const juce::MidiMessage& m, int t, const Settings& s)
 {
+    if (m.isAllNotesOff() || m.isAllSoundOff() || m.isResetAllControllers())
+    {
+        stopEverything (t);
+        output.addEvent (m, t);
+        return;
+    }
     if (! (m.isNoteOn() || m.isNoteOff()))
     {
         output.addEvent (m, t);
@@ -327,7 +366,7 @@ void NoteGenerator::seqStep (int t, const Settings& s)
 
     int note = sequence.note[(size_t) seqIndex].load();
     if (s.seqTranspose && numSeqHeld > 0)
-        note += seqHeld[(size_t) numSeqHeld - 1] - 60;
+        note += seqHeld[(size_t) numSeqHeld - 1] - sequence.note[0].load(); // key = step 1 plays as recorded
     if (note < 0 || note > 127)
         return;
 
@@ -343,6 +382,11 @@ void NoteGenerator::process (juce::MidiBuffer& midi, int numSamples, const Setti
     arpClock.begin (host, s.arpDivBeats, sampleRate);
     seqClock.begin (host, s.seqDivBeats, sampleRate);
 
+    // Transport stopped in the host: stop arp / sequencer (the host releases its own notes).
+    if (wasHostPlaying && ! host.playing)
+        stopEverything (0);
+    wasHostPlaying = host.playing;
+
     // Mode transitions
     if (s.seqPlay != wasSeqPlay)
     {
@@ -357,7 +401,7 @@ void NoteGenerator::process (juce::MidiBuffer& midi, int numSamples, const Setti
         {
             stopSeqNote (0);
             sequence.playIndex = -1;
-            numSeqHeld = 0;
+            numSeqHeld = seqPhysical = 0;
         }
         wasSeqPlay = s.seqPlay;
     }
@@ -372,10 +416,16 @@ void NoteGenerator::process (juce::MidiBuffer& midi, int numSamples, const Setti
         arpClock.restart();
         wasArpOn = s.arpOn;
     }
-    if (! s.arpLatch && s.arpOn && physicalHeld == 0 && numArpNotes > 0)
+    if (! latched (s) && s.arpOn && physicalHeld == 0 && numArpNotes > 0)
     {
         numArpNotes = 0; // latch was switched off with nothing held
         stopArpNote (0);
+    }
+    if (! latched (s) && s.seqPlay && seqPhysical == 0 && numSeqHeld > 0)
+    {
+        numSeqHeld = 0;
+        stopSeqNote (0);
+        sequence.playIndex = -1;
     }
 
     if (sequence.resetRequest.exchange (false))
@@ -409,7 +459,7 @@ void NoteGenerator::process (juce::MidiBuffer& midi, int numSamples, const Setti
         if (seqPlaying >= 0 && seqGateLeft <= 0)
             stopSeqNote (t);
 
-        if (s.seqPlay)
+        if (s.seqPlay && numSeqHeld > 0)
         {
             if (seqClock.due (t))
                 seqStep (t, s);
@@ -427,7 +477,7 @@ void NoteGenerator::process (juce::MidiBuffer& midi, int numSamples, const Setti
             next = std::min (next, t + std::max (1, arpGateLeft));
         if (seqPlaying >= 0)
             next = std::min (next, t + std::max (1, seqGateLeft));
-        if (s.seqPlay)
+        if (s.seqPlay && numSeqHeld > 0)
             next = std::min (next, t + seqClock.samplesUntilNext (t));
         else if (s.arpOn && numArpNotes > 0)
             next = std::min (next, t + arpClock.samplesUntilNext (t));
@@ -437,7 +487,7 @@ void NoteGenerator::process (juce::MidiBuffer& midi, int numSamples, const Setti
         const int elapsed = next - t;
         arpGateLeft -= elapsed;
         seqGateLeft -= elapsed;
-        if (s.seqPlay)
+        if (s.seqPlay && numSeqHeld > 0)
             seqClock.advance (elapsed);
         else if (s.arpOn && numArpNotes > 0)
             arpClock.advance (elapsed);

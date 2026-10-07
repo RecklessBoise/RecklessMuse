@@ -164,7 +164,7 @@ def delay(mix=0.25, fb=0.35, char=0.4, diff=0.3, divl="1/8D", divr="1/4", sync=T
     return d
 
 
-def arp(div="1/16", mode=ARP_UP, octaves=1, gate=0.5, latch=True):
+def arp(div="1/16", mode=ARP_UP, octaves=1, gate=0.5, latch=False):
     return dict(arpOn=1, arpDiv=DIV[div], arpMode=mode, arpOct=octaves, arpGate=gate, arpLatch=1 if latch else 0)
 
 
@@ -536,7 +536,7 @@ def pluck_presets():
 
 
 # ---------------------------------------------------------------------------
-# SEQUENCE / ARP (latch on: hold a chord once and it keeps running)
+# SEQUENCE / ARP (plays while keys are held; press LATCH or HOLD to keep it running)
 # ---------------------------------------------------------------------------
 BERLIN = [36, 48, 43, 46, 36, 48, 41, 43, 36, 48, 43, 46, 36, 51, 50, 46]
 PULSE_SEQ = [36, 36, 48, 36, 39, 36, 46, 36, 36, 36, 48, 36, 43, 36, 41, 39]

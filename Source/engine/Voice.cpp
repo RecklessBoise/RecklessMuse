@@ -327,6 +327,16 @@ void Voice::render (float* left, float* right, int numSamples, const TimbreState
             outL = outR = filter2.process (y1, g2, cur[rK2], poles, LadderFilter::LowPass);
         }
 
+        // Safety net: a non-finite value would otherwise latch the filters forever.
+        if (! std::isfinite (outL) || ! std::isfinite (outR))
+        {
+            filter1.reset();
+            filter2.reset();
+            osc1.reset (0.0f);
+            osc2.reset (0.5f);
+            outL = outR = 0.0f;
+        }
+
         // VCA
         const float trem = 1.0f - moVca * (moUni ? 1.0f - mo : 0.5f - 0.5f * mo);
         const float amp = envA * ampVelScale * vcaLevel * trem * 0.8f;

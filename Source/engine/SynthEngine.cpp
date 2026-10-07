@@ -239,11 +239,25 @@ void SynthEngine::processChunk (juce::AudioBuffer<float>& buffer, int start, int
 
     // Output stage
     masterGain.setTargetValue (juce::Decibels::decibelsToGain (asFloat (globals->masterVol), -60.0f) + 1.0e-6f);
+    bool corrupted = false;
     for (int n = 0; n < num; ++n)
     {
         const float g = masterGain.getNextValue();
+        if (! std::isfinite (outL[n]) || ! std::isfinite (right[n]))
+        {
+            outL[n] = right[n] = 0.0f;
+            corrupted = true;
+        }
         outL[n] = safetyClip (dcL.process (outL[n]) * g);
         right[n] = safetyClip (dcR.process (right[n]) * g);
+    }
+    if (corrupted)
+    {
+        // Never let one bad sample silence a channel for good.
+        delay.reset();
+        dcL.reset();
+        dcR.reset();
+        oversampler->reset();
     }
 }
 } // namespace rm

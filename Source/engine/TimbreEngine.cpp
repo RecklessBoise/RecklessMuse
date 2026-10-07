@@ -7,9 +7,6 @@ void TimbreEngine::prepare (double internalSampleRate, int timbreIndex)
     for (int i = 0; i < kVoicesPerTimbre; ++i)
     {
         voices[(size_t) i].prepare (internalSampleRate, i + timbreIndex * kVoicesPerTimbre);
-        // Alternate voices left/right, spreading wider with the voice number.
-        const float side = (i % 2 == 0) ? -1.0f : 1.0f;
-        voices[(size_t) i].setSpreadPosition (side * (0.35f + 0.65f * (float) (i / 2) / 3.0f));
     }
     numHeld = 0;
     keyDown.fill (false);
@@ -129,6 +126,14 @@ void TimbreEngine::updateState (const TimbreParamPtrs& p, float vintage, double 
 
 void TimbreEngine::configureStack()
 {
+    // Pan spread only spreads polyphonic voices (alternating left/right, wider with the voice
+    // number). Mono and unison stay centred: the unison voices get their own symmetric spread.
+    for (int i = 0; i < kVoicesPerTimbre; ++i)
+    {
+        const float side = (i % 2 == 0) ? -1.0f : 1.0f;
+        voices[(size_t) i].setSpreadPosition (state.polyMode == 0 ? side * (0.35f + 0.65f * (float) (i / 2) / 3.0f) : 0.0f);
+    }
+
     if (state.polyMode == 2)
     {
         const int n = numStackVoices();

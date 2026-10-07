@@ -79,7 +79,9 @@ void RecklessMuseProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
         lastUiWheel = wheel;
         midi.addEvent (juce::MidiMessage::controllerEvent (1, 1, juce::roundToInt (wheel * 127.0f)), 0);
     }
-    const bool hold = rm::asBool (globalParams.kbHold);
+    // HOLD acts as a sustain pedal, except with the arp / sequencer where it latches them instead.
+    const bool hold = rm::asBool (globalParams.kbHold) && ! rm::asBool (globalParams.arpOn)
+                      && ! rm::asBool (globalParams.seqPlay);
     if (hold != lastHold)
     {
         lastHold = hold;
@@ -108,6 +110,7 @@ void RecklessMuseProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     ns.seqLength = rm::asInt (globalParams.seqLength);
     ns.seqDivBeats = rm::choices::divisionBeats[juce::jlimit (0, 15, rm::asInt (globalParams.seqDiv))];
     ns.seqGate = rm::asFloat (globalParams.seqGate);
+    ns.hold = rm::asBool (globalParams.kbHold);
     noteGenerator.process (midi, numSamples, ns, host);
 
     if (chords.learnFinished.load())
