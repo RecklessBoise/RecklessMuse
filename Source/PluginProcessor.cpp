@@ -177,6 +177,7 @@ void RecklessMuseProcessor::getStateInformation (juce::MemoryBlock& destData)
     xml->setAttribute ("presetName", presets.getCurrentName());
     xml->setAttribute ("editorScale", (double) editorScale.load());
     xml->setAttribute ("editTimbre", editTimbre.load());
+    xml->setAttribute ("favoritesBank", presets.isFavoritesMode());
 
     // Sequence and chord memory travel with the session
     if (auto extra = presets.createPresetXml (presets.getCurrentName(), presets.getCurrentCategory()))
@@ -235,6 +236,7 @@ void RecklessMuseProcessor::setStateInformation (const void* data, int sizeInByt
         chords.count = 0;
     }
     presets.setCurrentByName (presetName);
+    presets.setFavoritesMode (xml->getBoolAttribute ("favoritesBank", false));
 }
 
 juce::AudioProcessorEditor* RecklessMuseProcessor::createEditor()

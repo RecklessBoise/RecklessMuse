@@ -356,6 +356,65 @@ void testNotesStop (Rig& rig)
     std::cout << "  " << checked << " sequence presets stop cleanly" << std::endl;
 }
 
+void testFavorites (Rig& rig)
+{
+    std::cout << "[favorites] like / bank / persistence" << std::endl;
+    auto file = juce::File::createTempFile ("favorites.xml");
+    auto& pm = rig.presets;
+    pm.setFavoritesFile (file);
+    check (pm.getNumFavorites() == 0, "favourites start empty");
+
+    // Like three presets from different categories
+    const int picks[] { 3, 120, 250 };
+    for (int idx : picks)
+    {
+        pm.loadPreset (idx);
+        pm.toggleCurrentFavorite();
+        check (pm.isCurrentFavorite(), "preset is liked after LIKE");
+    }
+    check (pm.getNumFavorites() == 3, "three favourites");
+
+    // BANK cycles to Favorites first; < > stay inside the bank and wrap around
+    pm.loadPreset (10);
+    pm.setFavoritesMode (false);
+    for (int i = 0; i < 20 && ! pm.isFavoritesMode(); ++i)
+        pm.nextCategory (1);
+    check (pm.isFavoritesMode(), "BANK reaches the Favorites bank");
+    check (pm.getCurrentIndex() == picks[0], "Favorites bank starts on the first liked preset");
+    pm.next (1);
+    check (pm.getCurrentIndex() == picks[1], "next favourite");
+    pm.next (1);
+    pm.next (1);
+    check (pm.getCurrentIndex() == picks[0], "favourites wrap around");
+    pm.next (-1);
+    check (pm.getCurrentIndex() == picks[2], "previous favourite wraps");
+    check (pm.getBankSize() == 3 && pm.getPositionInBank() == 2, "bank position for the display");
+
+    // Un-like the current one: browsing continues with the others
+    pm.toggleCurrentFavorite();
+    pm.next (1);
+    check (pm.getCurrentIndex() == picks[0], "skips an un-liked preset");
+
+    // Persistence: a fresh manager (another instance / project) sees the same likes
+    {
+        rm::SequenceData seq;
+        rm::ChordData chords;
+        rm::PresetManager other { rig.host.apvts, seq, chords };
+        other.setFavoritesFile (file);
+        check (other.getNumFavorites() == 2 && other.isFavorite (picks[0]) && other.isFavorite (picks[1]),
+               "favourites persist in the file");
+    }
+
+    // Removing every like leaves the Favorites bank
+    pm.loadPreset (picks[0]);
+    pm.toggleCurrentFavorite();
+    pm.loadPreset (picks[1]);
+    pm.toggleCurrentFavorite();
+    check (! pm.isFavoritesMode() && pm.getNumFavorites() == 0, "empty favourites exit the bank");
+    file.deleteFile();
+    pm.setFavoritesFile (rm::PresetManager::getDefaultFavoritesFile());
+}
+
 // AU and VST3 hosts identify parameters by a 31-bit hash of the ID string: it must be unique.
 void testParameterIds (Rig& rig)
 {
@@ -542,6 +601,7 @@ int main (int argc, char** argv)
     testInitPatch (rig);
     testAllPresets (rig);
     testNotesStop (rig);
+    testFavorites (rig);
     testPerformance (rig);
 
     std::cout << (failures == 0 ? "ALL TESTS PASSED" : juce::String (failures) + " FAILURE(S)") << std::endl;

@@ -425,6 +425,7 @@ void MainPanel::buildBottomRow()
         const auto s = section ("PROGRAMMER");
         display = &make<Display>();
         display->setBounds (s.getX() + 66, s.getY() + 22, 286, 82);
+        display->onClick = [this] { showPresetMenu(); };
 
         auto& prev = make<KeyCap> ("", colours::ivory, false);
         prev.setCapText ("<");
@@ -437,16 +438,25 @@ void MainPanel::buildBottomRow()
         place (next, s, 32, 84, 40, 30);
         next.onClick = [this] { processor.presets.next (1); };
 
+        likeButton = &make<HeartButton>();
+        place (*likeButton, s, 388, 31, 54, 19);
+        likeButton->onClick = [this]
+        {
+            processor.presets.toggleCurrentFavorite();
+            showParameter (processor.presets.getCurrentName(),
+                           processor.presets.isCurrentFavorite() ? "Added to Favorites" : "Removed from Favorites");
+        };
+
         const juce::StringArray actions { "BANK", "SAVE", "INIT" };
         for (int i = 0; i < 3; ++i)
         {
             auto& b = make<KeyCap> ("", colours::ivory, false);
             b.setCapText (actions[i]);
             b.setLabelBelow (false);
-            place (b, s, 388, 34 + i * 28, 50, 22);
+            place (b, s, 388, 53 + i * 22, 54, 19);
             if (i == 0) b.onClick = [this] { processor.presets.nextCategory (1); };
             if (i == 1) b.onClick = [this] { savePresetDialog(); };
-            if (i == 2) b.onClick = [this] { processor.presets.loadInit(); };
+            if (i == 2) b.onClick = [this] { processor.presets.setFavoritesMode (false); processor.presets.loadInit(); };
         }
 
         // Step pages and step note value
@@ -631,12 +641,80 @@ void MainPanel::savePresetDialog()
 
 void MainPanel::mouseDown (const juce::MouseEvent&) {}
 
+void MainPanel::showPresetMenu()
+{
+    auto& pm = processor.presets;
+    pm.reloadFavoritesIfChanged();
+    const int current = pm.getCurrentIndex();
+
+    // Item ids: preset index + 1 from a category submenu, 100000 + index + 1 from the Favorites submenu.
+    constexpr int favBase = 100000;
+    juce::PopupMenu menu;
+    juce::PopupMenu favMenu;
+    const auto favorites = pm.getFavoriteIndices();
+    for (int idx : favorites)
+    {
+        const auto& p = pm.getPreset (idx);
+        favMenu.addItem (favBase + idx + 1, p.name + "   (" + p.category + ")", true, idx == current && pm.isFavoritesMode());
+    }
+    if (favorites.empty())
+        favMenu.addItem (-1, "Nothing liked yet: press LIKE on a preset", false, false);
+    menu.addSubMenu (juce::String (juce::CharPointer_UTF8 ("\xe2\x99\xa5 Favorites (")) + juce::String ((int) favorites.size()) + ")",
+                     favMenu, true, nullptr, pm.isFavoritesMode());
+    menu.addSeparator();
+
+    juce::String category;
+    juce::PopupMenu sub;
+    bool subHasCurrent = false;
+    auto flush = [&]
+    {
+        if (category.isNotEmpty())
+            menu.addSubMenu (category, sub, true, nullptr, subHasCurrent && ! pm.isFavoritesMode());
+        sub = {};
+        subHasCurrent = false;
+    };
+    for (int i = 0; i < pm.getNumPresets(); ++i)
+    {
+        const auto& p = pm.getPreset (i);
+        if (p.category != category)
+        {
+            flush();
+            category = p.category;
+        }
+        const auto label = pm.isFavorite (i) ? p.name + juce::String (juce::CharPointer_UTF8 ("  \xe2\x99\xa5")) : p.name;
+        sub.addItem (i + 1, label, true, i == current);
+        subHasCurrent |= i == current;
+    }
+    flush();
+
+    juce::Component::SafePointer<MainPanel> safe (this);
+    menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (display), [safe] (int result)
+    {
+        if (safe == nullptr || result <= 0)
+            return;
+        auto& presets = safe->processor.presets;
+        if (result > favBase)
+        {
+            presets.setFavoritesMode (true);
+            presets.loadPreset (result - favBase - 1);
+        }
+        else
+        {
+            presets.setFavoritesMode (false);
+            presets.loadPreset (result - 1);
+        }
+    });
+}
+
 void MainPanel::timerCallback()
 {
     auto& pm = processor.presets;
     if (display != nullptr)
     {
-        display->setPreset (pm.getCurrentCategory(), pm.getCurrentName(), pm.getCurrentIndex(), pm.getNumPresets());
+        display->setPreset (pm.isFavoritesMode() ? juce::String ("Favorites") : pm.getCurrentCategory(),
+                            pm.getCurrentName(), pm.getPositionInBank(), pm.getBankSize());
+        likeButton->setLiked (pm.isCurrentFavorite());
+        likeButton->setEnabled (pm.getCurrentIndex() >= 0);
         const int mode = asInt (state.getRawParameterValue ("timbreMode"));
         const juce::String timbre = juce::String ("EDIT ") + (editTimbre == 0 ? "A" : "B") + "  "
                                     + choices::timbreMode[mode].toUpperCase();

@@ -5,7 +5,7 @@
 namespace rm::ui
 {
 // Blue vacuum-fluorescent style display of the PROGRAMMER section.
-class Display : public juce::Component, private juce::Timer
+class Display : public juce::Component, public juce::SettableTooltipClient, private juce::Timer
 {
 public:
     Display();
@@ -15,6 +15,9 @@ public:
     void showParameter (const juce::String& name, const juce::String& value);
 
     void paint (juce::Graphics&) override;
+    void mouseDown (const juce::MouseEvent&) override { if (onClick) onClick(); }
+
+    std::function<void()> onClick; // opens the preset browser menu
 
 private:
     void timerCallback() override;

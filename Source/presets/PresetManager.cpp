@@ -8,6 +8,8 @@ PresetManager::PresetManager (juce::AudioProcessorValueTreeState& state, Sequenc
 {
     loadFactoryPresets();
     rescanUserPresets();
+    favoritesFile = getDefaultFavoritesFile();
+    loadFavorites();
 }
 
 const juce::StringArray& PresetManager::categoryOrder()
@@ -219,10 +221,128 @@ void PresetManager::loadInit()
     currentIndex = -1;
 }
 
+// ---------------------------------------------------------------------------
+// Favourites
+// ---------------------------------------------------------------------------
+juce::File PresetManager::getDefaultFavoritesFile()
+{
+    return getUserPresetFolder().getParentDirectory().getChildFile ("Favorites.xml");
+}
+
+void PresetManager::setFavoritesFile (const juce::File& file)
+{
+    favoritesFile = file;
+    loadFavorites();
+}
+
+void PresetManager::loadFavorites()
+{
+    favorites.clear();
+    favoritesLoadedTime = favoritesFile.getLastModificationTime();
+    if (auto xml = juce::parseXML (favoritesFile))
+        for (auto* e : xml->getChildWithTagNameIterator ("Preset"))
+            favorites.addIfNotAlreadyThere (e->getStringAttribute ("key"));
+}
+
+void PresetManager::saveFavorites()
+{
+    juce::XmlElement xml ("RecklessMuseFavorites");
+    for (auto& key : favorites)
+        xml.createNewChildElement ("Preset")->setAttribute ("key", key);
+    favoritesFile.getParentDirectory().createDirectory();
+    xml.writeTo (favoritesFile);
+    favoritesLoadedTime = favoritesFile.getLastModificationTime();
+}
+
+void PresetManager::reloadFavoritesIfChanged()
+{
+    // Another instance (or another project) may have liked something in the meantime.
+    if (favoritesFile.getLastModificationTime() != favoritesLoadedTime)
+        loadFavorites();
+}
+
+bool PresetManager::isFavorite (int index) const
+{
+    return index >= 0 && index < (int) presets.size() && favorites.contains (keyOf (presets[(size_t) index]));
+}
+
+void PresetManager::toggleFavorite (int index)
+{
+    if (index < 0 || index >= (int) presets.size())
+        return;
+    reloadFavoritesIfChanged();
+    const auto key = keyOf (presets[(size_t) index]);
+    if (favorites.contains (key))
+        favorites.removeString (key);
+    else
+        favorites.add (key);
+    saveFavorites();
+    if (favoritesMode && getFavoriteIndices().empty())
+        favoritesMode = false;
+}
+
+std::vector<int> PresetManager::getFavoriteIndices() const
+{
+    // Bank order = library order (category, then name), like every other bank.
+    std::vector<int> out;
+    for (size_t i = 0; i < presets.size(); ++i)
+        if (favorites.contains (keyOf (presets[i])))
+            out.push_back ((int) i);
+    return out;
+}
+
+void PresetManager::setFavoritesMode (bool shouldBrowseFavorites)
+{
+    reloadFavoritesIfChanged();
+    favoritesMode = shouldBrowseFavorites && ! getFavoriteIndices().empty();
+}
+
+int PresetManager::getPositionInBank() const
+{
+    if (! favoritesMode)
+        return currentIndex;
+    const auto fav = getFavoriteIndices();
+    const auto it = std::find (fav.begin(), fav.end(), currentIndex);
+    return it == fav.end() ? -1 : (int) (it - fav.begin());
+}
+
+int PresetManager::getBankSize() const
+{
+    return favoritesMode ? (int) getFavoriteIndices().size() : (int) presets.size();
+}
+
 void PresetManager::next (int delta)
 {
     if (presets.empty())
         return;
+
+    if (favoritesMode)
+    {
+        reloadFavoritesIfChanged();
+        const auto fav = getFavoriteIndices();
+        if (! fav.empty())
+        {
+            const int n = (int) fav.size();
+            const auto it = std::find (fav.begin(), fav.end(), currentIndex);
+            int pos;
+            if (it != fav.end())
+                pos = (((int) (it - fav.begin()) + delta) % n + n) % n;
+            else // current preset was un-liked: jump to the nearest liked one in that direction
+            {
+                pos = delta > 0 ? 0 : n - 1;
+                for (int i = 0; i < n; ++i)
+                    if (delta > 0 ? fav[(size_t) i] > currentIndex : fav[(size_t) (n - 1 - i)] < currentIndex)
+                    {
+                        pos = delta > 0 ? i : n - 1 - i;
+                        break;
+                    }
+            }
+            loadPreset (fav[(size_t) pos]);
+            return;
+        }
+        favoritesMode = false;
+    }
+
     const int n = (int) presets.size();
     const int start = currentIndex < 0 ? (delta > 0 ? -1 : 0) : currentIndex;
     loadPreset (((start + delta) % n + n) % n);
@@ -232,13 +352,28 @@ void PresetManager::nextCategory (int delta)
 {
     if (presets.empty())
         return;
-    juce::StringArray present;
+    reloadFavoritesIfChanged();
+
+    // Banks: Favorites (when something is liked), then every category.
+    juce::StringArray banks;
+    const auto fav = getFavoriteIndices();
+    if (! fav.empty())
+        banks.add ("Favorites");
     for (auto& p : presets)
-        present.addIfNotAlreadyThere (p.category);
-    int ci = present.indexOf (currentCategory);
-    ci = ci < 0 ? 0 : ((ci + delta) % present.size() + present.size()) % present.size();
+        banks.addIfNotAlreadyThere (p.category);
+
+    int bi = banks.indexOf (getBankName());
+    bi = bi < 0 ? 0 : ((bi + delta) % banks.size() + banks.size()) % banks.size();
+
+    if (banks[bi] == "Favorites")
+    {
+        favoritesMode = true;
+        loadPreset (fav.front());
+        return;
+    }
+    favoritesMode = false;
     for (size_t i = 0; i < presets.size(); ++i)
-        if (presets[i].category == present[ci])
+        if (presets[i].category == banks[bi])
         {
             loadPreset ((int) i);
             return;

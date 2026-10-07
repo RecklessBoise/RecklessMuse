@@ -204,6 +204,43 @@ void KeyCap::paintButton (juce::Graphics& g, bool highlighted, bool down)
 }
 
 // ---------------------------------------------------------------------------
+// HeartButton
+// ---------------------------------------------------------------------------
+void HeartButton::paintButton (juce::Graphics& g, bool highlighted, bool down)
+{
+    auto cap = getLocalBounds().toFloat().reduced (1.0f);
+    if (down) cap = cap.translated (0.0f, 1.0f);
+    const auto base = highlighted ? colours::ivory : colours::ivory.darker (0.25f);
+    g.setColour (juce::Colours::black.withAlpha (0.6f));
+    g.fillRoundedRectangle (cap.translated (0.0f, 1.5f), 2.5f);
+    juce::ColourGradient grad (base.brighter (0.12f), cap.getX(), cap.getY(), base.darker (0.18f), cap.getX(),
+                               cap.getBottom(), false);
+    g.setGradientFill (grad);
+    g.fillRoundedRectangle (cap, 2.5f);
+
+    // Heart on the left, "LIKE" / "LIKED" on the right
+    const float h = cap.getHeight() * 0.62f;
+    const auto heartArea = juce::Rectangle<float> (h * 1.1f, h).withCentre ({ cap.getX() + h * 0.95f, cap.getCentreY() + 0.5f });
+    juce::Path heart;
+    const float x = heartArea.getX(), y = heartArea.getY(), w = heartArea.getWidth(), hh = heartArea.getHeight();
+    heart.startNewSubPath (x + w * 0.5f, y + hh);
+    heart.cubicTo (x - w * 0.25f, y + hh * 0.45f, x + w * 0.15f, y - hh * 0.25f, x + w * 0.5f, y + hh * 0.25f);
+    heart.cubicTo (x + w * 0.85f, y - hh * 0.25f, x + w * 1.25f, y + hh * 0.45f, x + w * 0.5f, y + hh);
+    heart.closeSubPath();
+    if (liked)
+    {
+        g.setColour (colours::led);
+        g.fillPath (heart);
+    }
+    g.setColour (liked ? colours::led.darker (0.3f) : juce::Colours::black.withAlpha (0.75f));
+    g.strokePath (heart, juce::PathStrokeType (1.2f));
+
+    g.setColour (juce::Colours::black.withAlpha (0.8f));
+    g.setFont (labelFont (std::min (12.0f, cap.getHeight() * 0.6f)));
+    g.drawText (liked ? "LIKED" : "LIKE", cap.withTrimmedLeft (h * 1.7f).toNearestInt(), juce::Justification::centred);
+}
+
+// ---------------------------------------------------------------------------
 // LedChoice
 // ---------------------------------------------------------------------------
 LedChoice::LedChoice (juce::String t, juce::StringArray shortLabels, bool isVertical)

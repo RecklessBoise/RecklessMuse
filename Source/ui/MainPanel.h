@@ -59,6 +59,7 @@ private:
     void timerCallback() override;
     void showParameter (const juce::String& name, const juce::String& value);
     void savePresetDialog();
+    void showPresetMenu();
     void selectStep (int step);
 
     RecklessMuseProcessor& processor;
@@ -71,6 +72,7 @@ private:
     std::vector<Bindable*> allBindables;
 
     Display* display = nullptr;
+    HeartButton* likeButton = nullptr;
     KeyCap* timbreButtons[2] {};
     KeyCap* matrixButton = nullptr;
     std::array<KeyCap*, 16> stepButtons {};

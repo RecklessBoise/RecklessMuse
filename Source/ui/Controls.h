@@ -91,6 +91,19 @@ private:
     std::unique_ptr<APVTS::ButtonAttachment> attachment;
 };
 
+// "Like" keycap: outlined heart, filled red when the current preset is a favourite.
+class HeartButton : public juce::Button
+{
+public:
+    HeartButton() : juce::Button ("Like") { setTooltip ("Like this preset (adds it to the Favorites bank)"); }
+    void setLiked (bool shouldBeLiked) { if (liked != shouldBeLiked) { liked = shouldBeLiked; repaint(); } }
+    bool isLiked() const noexcept { return liked; }
+    void paintButton (juce::Graphics&, bool highlighted, bool down) override;
+
+private:
+    bool liked = false;
+};
+
 // Row/column of LEDs with labels; click an entry to select it (choice parameters).
 class LedChoice : public juce::Component, public Bindable
 {

@@ -15,7 +15,12 @@ void glowText (juce::Graphics& g, const juce::String& text, juce::Rectangle<int>
 }
 } // namespace
 
-Display::Display() { startTimerHz (10); }
+Display::Display()
+{
+    setMouseCursor (juce::MouseCursor::PointingHandCursor);
+    setTooltip ("Click to browse presets and your Favorites");
+    startTimerHz (10);
+}
 
 void Display::setPreset (const juce::String& cat, const juce::String& n, int i, int t)
 {

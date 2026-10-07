@@ -48,6 +48,7 @@ Le cœur du son est le filtre à échelle : quatre étages à topologie préserv
 * **EDIT A / EDIT B** (Voice Control) : choisit le timbre affiché par toute la face avant.
 * **MOD MATRIX** (Assignable Controllers) : ouvre la matrice de modulation du timbre édité.
 * Programmer : `<` `>` pour naviguer dans les presets, **BANK** pour changer de catégorie, **SAVE** pour sauver un preset utilisateur (dans `~/Music/RecklessMuse/Presets`), **INIT** pour repartir de zéro.
+* **Favoris** : **♥ LIKE** ajoute / retire le preset courant de la banque **Favorites**. Cette banque apparaît en premier dans le cycle **BANK** ; une fois dedans, `<` `>` ne parcourent que tes presets likés. Clic sur l'écran = menu de tous les presets, avec la banque Favorites en tête (les presets likés y sont marqués ♥). Les favoris sont enregistrés dans `~/Music/RecklessMuse/Favorites.xml` et partagés par tous tes projets et toutes les instances.
 * Séquenceur : **PLAY** arme le séquenceur, qui joue **tant qu'une touche est tenue** (la touche transpose : jouer la note du pas 1 donne la hauteur d'origine). **LATCH** (arpégiateur) ou **HOLD** le font tourner seul ; l'arrêt du transport du DAW l'arrête toujours.
   Clic sur un pas = sélection, second clic = active / silence ; **STEP NOTE** règle la note du pas sélectionné ; **REC** enregistre depuis le clavier.
 * Arpégiateur : joue tant que les notes sont tenues ; **LATCH** ou **HOLD** pour le garder actif après relâchement.

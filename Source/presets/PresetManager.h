@@ -49,9 +49,30 @@ public:
     // For state restore
     void setCurrentByName (const juce::String& name);
 
+    // Favourites ("liked" presets), shared by every instance through ~/Music/RecklessMuse/Favorites.xml.
+    static juce::File getDefaultFavoritesFile();
+    void setFavoritesFile (const juce::File& file); // tests use a temporary file
+    static juce::String keyOf (const Preset& p) { return p.category + "/" + p.name; }
+    bool isFavorite (int index) const;
+    bool isCurrentFavorite() const { return isFavorite (currentIndex); }
+    void toggleFavorite (int index);
+    void toggleCurrentFavorite() { toggleFavorite (currentIndex); }
+    std::vector<int> getFavoriteIndices() const;
+    int getNumFavorites() const { return (int) getFavoriteIndices().size(); }
+
+    // Favourites bank: when active, < > only browse the liked presets.
+    bool isFavoritesMode() const noexcept { return favoritesMode; }
+    void setFavoritesMode (bool shouldBrowseFavorites);
+    juce::String getBankName() const { return favoritesMode ? juce::String ("Favorites") : currentCategory; }
+    int getPositionInBank() const;
+    int getBankSize() const;
+    void reloadFavoritesIfChanged();
+
 private:
     void loadFactoryPresets();
     void sortPresets();
+    void loadFavorites();
+    void saveFavorites();
 
     juce::AudioProcessorValueTreeState& apvts;
     SequenceData& sequence;
@@ -59,5 +80,10 @@ private:
     std::vector<Preset> presets;
     int currentIndex = -1;
     juce::String currentName { "Init" }, currentCategory { "Init" };
+
+    juce::File favoritesFile;
+    juce::Time favoritesLoadedTime;
+    juce::StringArray favorites; // preset keys, in the order they were liked
+    bool favoritesMode = false;
 };
 } // namespace rm

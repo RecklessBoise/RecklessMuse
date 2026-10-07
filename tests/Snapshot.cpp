@@ -39,6 +39,15 @@ int main (int argc, char** argv)
         return 0;
     }
 
+    // --liked: show the Favorites bank with the current preset liked (uses a temporary favourites file)
+    juce::TemporaryFile tempFavorites (".xml");
+    if (argc > 2 && juce::String (argv[2]) == "--liked")
+    {
+        processor.presets.setFavoritesFile (tempFavorites.getFile());
+        processor.presets.toggleCurrentFavorite();
+        processor.presets.setFavoritesMode (true);
+    }
+
     for (float scale : { 0.5f, 1.0f, 1.5f })
     {
         processor.editorScale = scale;
